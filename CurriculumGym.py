@@ -100,6 +100,8 @@ class CurriculumGym:
 
     def reset(self):
         self.vision_model = YOLO("yolo11n.pt")
+        if os.path.exists("runs"):
+            shutil.rmtree("runs")
         for directory in self.dirs:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
