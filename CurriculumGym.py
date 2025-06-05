@@ -30,13 +30,13 @@ class CurriculumGym:
         self.n_actions = 3
         self.input_h = 224
         self.input_w = 224
-        base_dir = os.getcwd()
-        self.img_dir = os.path.join(base_dir, 'datasets', 'CV', 'images')
-        self.lbl_dir = os.path.join(base_dir, 'datasets', 'CV', 'labels')
+        self.base_dir = os.getcwd()
+        self.img_dir = os.path.join(self.base_dir, 'datasets', 'CV', 'images')
+        self.lbl_dir = os.path.join(self.base_dir, 'datasets', 'CV', 'labels')
         self.curriculums = [
-            {"data": os.path.join(base_dir, 'datasets', 'CV', '0.yaml'), "epochs": 5},
-            {"data": os.path.join(base_dir, 'datasets', 'CV', '1.yaml'), "epochs": 5},
-            {"data": os.path.join(base_dir, 'datasets', 'CV', '2.yaml'), "epochs": 5},
+            {"data": os.path.join(self.base_dir, 'datasets', 'CV', '0.yaml'), "epochs": 5},
+            {"data": os.path.join(self.base_dir, 'datasets', 'CV', '1.yaml'), "epochs": 5},
+            {"data": os.path.join(self.base_dir, 'datasets', 'CV', '2.yaml'), "epochs": 5},
         ]
         self.best_checkpoint_path = "runs/detect/train/weights/best.pt"
 
@@ -128,14 +128,14 @@ class CurriculumGym:
                 shutil.copy2(img_src_path, img_dst_path)
                 shutil.copy2(lbl_src_path, lbl_dst_path)
 
-        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=self.curriculums[0]["epochs"], imgsz=self.img_size)
+        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=self.curriculums[0]["epochs"], imgsz=self.img_size, project=self.base_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=self.curriculums[1]["epochs"], imgsz=self.img_size)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=self.curriculums[1]["epochs"], imgsz=self.img_size, project=self.base_dir)
         self.vision_model = YOLO(self.last_path(result))
 
         for i in range(self.curriculums[2]["epochs"]):
-            result = self.vision_model.train(data=self.curriculums[2]["data"], epochs=1, imgsz=self.img_size)
+            result = self.vision_model.train(data=self.curriculums[2]["data"], epochs=1, imgsz=self.img_size, project=self.base_dir)
             self.vision_model = YOLO(self.last_path(result))
 
             preds = self.vision_model.predict(source=os.path.join(self.img_dir, '2'), save=False, save_txt=False, stream=True)
