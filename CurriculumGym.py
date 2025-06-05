@@ -40,8 +40,8 @@ class CurriculumGym:
         ]
         self.best_checkpoint_path = "runs/detect/train/weights/best.pt"
 
-        self.original_img_dir = os.path.join(self.img_dir, 'original')
-        self.original_lbl_dir = os.path.join(self.lbl_dir, 'original')
+        self.original_img_dir = os.path.join(self.img_dir, 'augmented')
+        self.original_lbl_dir = os.path.join(self.lbl_dir, 'augmented')
         self.train_img_dir = os.path.join(self.img_dir, 'train')
         self.val_img_dir = os.path.join(self.img_dir, 'val')
         self.train_lbl_dir = os.path.join(self.lbl_dir, 'train')

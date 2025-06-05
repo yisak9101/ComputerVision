@@ -149,10 +149,12 @@ epsilon = 1
 eps_decay = 0.1
 eps_min = 0.05
 n_updates = 0
-target_update_freq = 50
+target_update_freq = 10
 evaluate_freq = 25
 episodes = 2500
-epoch = 10
+epoch = 25
+best = -1e5
+test_freq = 25
 
 # --- Training Loop ---
 returns = []
@@ -188,9 +190,20 @@ for episode in range(episodes):
     if n_updates % target_update_freq == 0:
         target_net.load_state_dict(q_net.state_dict())
 
+    if n_updates % evaluate_freq == 0:
+        test_total_reward = 0
+        for test_tran in env.rollout(q_net, epsilon, True).values():
+            test_total_reward += test_tran.reward
+        if test_total_reward > best:
+            best = test_total_reward
+            torch.save(q_net.state_dict(), 'best_dqn_weights.pth')
+
     epsilon = max(epsilon * eps_decay, eps_min)
     returns.append(total_reward)
     print(f"Episode {episode}: Return = {total_reward}")
+    with open('train_result.txt', 'w') as f:
+        for ret in returns:
+            f.write(f"{ret}\n")
 
 env.close()
 plt.plot(returns)
