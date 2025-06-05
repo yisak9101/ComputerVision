@@ -1,3 +1,7 @@
+import argparse
+import os
+import shutil
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -134,8 +138,14 @@ class DQN(nn.Module):
         return torch.tensor(actions)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--savedir", type=str, required=True)
+parser.add_argument("--yolomodel", type=str, default="yolo11n.pt")
+
+args = parser.parse_args()
+
 # --- Hyperparameters ---
-env = CurriculumGym()
+env = CurriculumGym(args.yolomodel)
 num_actions = env.n_actions
 q_net = DQN(env.input_h, env.input_w, num_actions).to(device)
 target_net = DQN(env.input_h, env.input_w, num_actions).to(device)
@@ -155,6 +165,11 @@ episodes = 2500
 epoch = 25
 best = -1e5
 test_freq = 25
+save_dir = args.savedir
+
+if os.path.exists(save_dir):
+    shutil.rmtree(save_dir)
+os.makedirs(save_dir)
 
 # --- Training Loop ---
 returns = []
@@ -196,12 +211,12 @@ for episode in range(episodes):
             test_total_reward += test_tran.reward
         if test_total_reward > best:
             best = test_total_reward
-            torch.save(q_net.state_dict(), 'best_dqn_weights.pth')
+            torch.save(q_net.state_dict(), f'{save_dir}/best_dqn_weights.pth')
 
     epsilon = max(epsilon * eps_decay, eps_min)
     returns.append(total_reward)
     print(f"Episode {episode}: Return = {total_reward}")
-    with open('train_result.txt', 'w') as f:
+    with open(f'{save_dir}/train_result.txt', 'w') as f:
         for ret in returns:
             f.write(f"{ret}\n")
 

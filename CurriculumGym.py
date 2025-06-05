@@ -23,8 +23,8 @@ class Transition:
 
 
 class CurriculumGym:
-    def __init__(self):
-        self.vision_model = YOLO("yolo11n.pt")
+    def __init__(self, yolomodel):
+        self.vision_model = YOLO(yolomodel)
         self.val_size = 20
         self.img_size = 640
         self.n_actions = 3
