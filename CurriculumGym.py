@@ -205,7 +205,7 @@ class CurriculumGym:
 
     def evaluate(self, model):
         states = self.rgb_batch(self.original_img_dir, self.train_img_files)
-        actions = model.select_actions(states, 0, True)  # Assume model returns a list or tensor of actions
+        actions = model.select_actions(states, 0.1, False)  # Assume model returns a list or tensor of actions
 
         for i, action in enumerate(actions):
             transition = self.transitions[self.train_img_files[i]]
