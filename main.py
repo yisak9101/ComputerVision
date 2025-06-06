@@ -141,6 +141,7 @@ class DQN(nn.Module):
 parser = argparse.ArgumentParser()
 parser.add_argument("--savedir", type=str, required=True)
 parser.add_argument("--yolomodel", type=str, default="yolo11n.pt")
+parser.add_argument("--evaluate", type=bool, default=False)
 
 args = parser.parse_args()
 
@@ -166,6 +167,12 @@ epoch = 25
 best = -1e5
 test_freq = 25
 save_dir = args.savedir
+
+if args.evaluate:
+    torch.save(q_net.state_dict(), f'{save_dir}/best_dqn_weights.pth')
+    env.reset()
+    env.evaluate(q_net)
+    exit(0)
 
 if os.path.exists(save_dir):
     shutil.rmtree(save_dir)
