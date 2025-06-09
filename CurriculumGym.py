@@ -33,6 +33,7 @@ class CurriculumGym:
         self.input_h = 224
         self.input_w = 224
         self.base_dir = os.getcwd()
+        self.temp_dir = os.path.join(self.base_dir, 'temp')
         self.img_dir = os.path.join(self.base_dir, 'datasets', 'CV', 'images')
         self.lbl_dir = os.path.join(self.base_dir, 'datasets', 'CV', 'labels')
         self.curriculums = [
@@ -40,7 +41,6 @@ class CurriculumGym:
             {"data": os.path.join(self.base_dir, 'datasets', 'CV', '1.yaml'), "epochs": 5},
             {"data": os.path.join(self.base_dir, 'datasets', 'CV', '2.yaml'), "epochs": 5},
         ]
-        self.best_checkpoint_path = "runs/detect/train/weights/best.pt"
 
         self.original_img_dir = os.path.join(self.img_dir, 'augmented')
         self.original_lbl_dir = os.path.join(self.lbl_dir, 'augmented')
@@ -88,6 +88,7 @@ class CurriculumGym:
             os.path.join(self.lbl_dir, '0'),
             os.path.join(self.lbl_dir, '1'),
             os.path.join(self.lbl_dir, '2'),
+            self.temp_dir
         ]
 
     def rgb(self, img_path):
@@ -104,8 +105,6 @@ class CurriculumGym:
 
     def reset(self):
         self.vision_model = YOLO("yolo11n.pt")
-        if os.path.exists("runs"):
-            shutil.rmtree("runs")
         for directory in self.dirs:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
@@ -132,17 +131,17 @@ class CurriculumGym:
                 shutil.copy2(img_src_path, img_dst_path)
                 shutil.copy2(lbl_src_path, lbl_dst_path)
 
-        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=self.curriculums[0]["epochs"], imgsz=self.img_size, project=self.base_dir)
+        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=self.curriculums[0]["epochs"], imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=self.curriculums[1]["epochs"], imgsz=self.img_size, project=self.base_dir)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=self.curriculums[1]["epochs"], imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
         for i in range(self.curriculums[2]["epochs"]):
-            result = self.vision_model.train(data=self.curriculums[2]["data"], epochs=1, imgsz=self.img_size, project=self.base_dir)
+            result = self.vision_model.train(data=self.curriculums[2]["data"], epochs=1, imgsz=self.img_size, project=self.temp_dir)
             self.vision_model = YOLO(self.last_path(result))
 
-            preds = self.vision_model.predict(source=os.path.join(self.img_dir, '2'), save=False, save_txt=False, stream=True)
+            preds = self.vision_model.predict(source=os.path.join(self.img_dir, '2'), save=False, save_txt=False, stream=True, project=self.temp_dir)
             for pred in preds:
                 img = os.path.basename(pred.path)
 
@@ -219,13 +218,13 @@ class CurriculumGym:
                 shutil.copy2(img_src_path, img_dst_path)
                 shutil.copy2(lbl_src_path, lbl_dst_path)
 
-        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=20, imgsz=self.img_size, project=self.base_dir)
+        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=20, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=30, imgsz=self.img_size, project=self.base_dir)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=30, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=50, imgsz=self.img_size, project=self.base_dir)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=50, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.best_path(result))
 
         image_dir = "datasets/CV/images/test"
@@ -281,9 +280,8 @@ class CurriculumGym:
         # Process in small batches (e.g., 16 images)
         for i in range(0, len(image_paths), batch_size):
             batch = image_paths[i:i + batch_size]
-            results = self.vision_model.predict(source=batch, device=0)
+            results = self.vision_model.predict(source=batch, device=0, project=self.temp_dir)
             for result, img_path in zip(results, batch):
                 save_labelme(result, img_path)
             torch.cuda.empty_cache()
         return
-
