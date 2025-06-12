@@ -4,6 +4,7 @@ import shutil
 import random
 import os
 import shutil
+import zipfile
 
 import cv2
 import numpy as np
@@ -202,9 +203,9 @@ class CurriculumGym:
                     break
         return correct == len(gt_classes)
 
-    def evaluate(self, model):
+    def evaluate(self, model, label):
         states = self.rgb_batch(self.original_img_dir, self.train_img_files)
-        actions = model.select_actions(states, 0.1, False)  # Assume model returns a list or tensor of actions
+        actions = model.select_actions(states, 0.1, True)  # Assume model returns a list or tensor of actions
 
         for i, action in enumerate(actions):
             transition = self.transitions[self.train_img_files[i]]
@@ -218,13 +219,13 @@ class CurriculumGym:
                 shutil.copy2(img_src_path, img_dst_path)
                 shutil.copy2(lbl_src_path, lbl_dst_path)
 
-        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=20, imgsz=self.img_size, project=self.temp_dir)
+        result = self.vision_model.train(data=self.curriculums[0]["data"], epochs=1, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=30, imgsz=self.img_size, project=self.temp_dir)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=1, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.last_path(result))
 
-        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=50, imgsz=self.img_size, project=self.temp_dir)
+        result = self.vision_model.train(data=self.curriculums[1]["data"], epochs=1, imgsz=self.img_size, project=self.temp_dir)
         self.vision_model = YOLO(self.best_path(result))
 
         image_dir = "datasets/CV/images/test"
@@ -236,7 +237,8 @@ class CurriculumGym:
         # Class names (update to match your model)
         class_names = self.vision_model.names  # e.g., {0: 'sitting', 1: 'throwing', ...}
 
-        output_dir = f"labelme_jsons"
+        os.makedirs("labelme_jsons", exist_ok=True)
+        output_dir = f"labelme_jsons/{label}"
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.makedirs(output_dir, exist_ok=True)
@@ -284,4 +286,14 @@ class CurriculumGym:
             for result, img_path in zip(results, batch):
                 save_labelme(result, img_path)
             torch.cuda.empty_cache()
+
+        zip_files(output_dir)
+
         return
+
+def zip_files(folder_path):
+    with zipfile.ZipFile(f"{folder_path}.zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            if os.path.isfile(file_path):  # only files
+                zipf.write(file_path, arcname=file_name)

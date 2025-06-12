@@ -169,9 +169,10 @@ test_freq = 25
 save_dir = args.savedir
 
 if args.evaluate:
-    torch.save(q_net.state_dict(), f'{save_dir}/best_dqn_weights.pth')
-    env.reset()
-    env.evaluate(q_net)
+    q_net.load_state_dict(torch.load(f'{save_dir}/best_dqn_weights.pth'))
+    for i in range(100):
+        env.reset()
+        env.evaluate(q_net, f"rl_yolo11_gamma0_{i}")
     exit(0)
 
 if os.path.exists(save_dir):
